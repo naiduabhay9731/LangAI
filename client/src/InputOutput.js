@@ -1,7 +1,7 @@
 //import logo from './logo.svg';
 import './InputOutput.css';
 import React, { useState } from "react";
-//import axios from "axios";
+import axios from "axios";
 
 function InputOutput() {
   const [inputData, setInputData] = useState('');
@@ -13,25 +13,24 @@ function InputOutput() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    console.log(inputData)
 
-    const response = await fetch('http://localhost:3000', {
-      method: 'POST',
-      mode: 'cors',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ inputData })
-    })
-    .then((response) => response.text())
-    .then()
+    try{const response = await axios.post('http://localhost:5000',{name:inputData});
+    console.log(response)
+    setOutputData(response.data);
+  
+  }catch(e){
+      console.log(e);
+    }
 
-    var jsonResponse = await response;
-    setOutputData(jsonResponse.outputData);
+
+    // var jsonResponse = await response;
+    // setOutputData(jsonResponse.outputData);
   };
 
   return (
     <div className="container">
-      <h1>Input/Output Example</h1>
+      <h1>LANGAI</h1>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="input" className="label">Input:</label>

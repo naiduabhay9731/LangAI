@@ -7,31 +7,29 @@ const { response, text } = require("express");
 const {ChromaClient} = require('chromadb');
 const OpenAI = require("langchain/llms/openai").OpenAI;
 const Chroma =require("langchain/vectorstores/chroma").Chroma;
-
+var path = require('path');
 const ConversationalRetrievalQAChain= require("langchain/chains").ConversationalRetrievalQAChain;
 const { log } = require("console");
 const OpenAIEmbeddings= require( "langchain/embeddings/openai").OpenAIEmbeddings;
 const RecursiveCharacterTextSplitter= require( "langchain/text_splitter").RecursiveCharacterTextSplitter;
 const express = require("express");
-const bodyParser = require("body-parser");
-const cors = require('cors');
-const app = express();
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cors());
-const client = new ChromaClient();
 
+const cors = require('cors');
+const { title } = require("process");
+const app = express();
+
+
+const client = new ChromaClient();
+app.use(cors());
 app.use(express.json())
 
-const onData = (percentage) =>{
-    console.log(percentage)
-}
-const onClose = () =>{
-    console.log("Finish")
-}
 
 
+const naidu=process.env.OPENAI_API_KEY;
+const mongoserver= process.env.mongo;
+console.log(mongoserver,naidu);
 
-mongoose.connect('mongodb+srv://naiduabhay1:naiduabhay1107@diarycluster.ic3uetd.mongodb.net/transcribe');
+mongoose.connect("mongodb+srv://"+mongoserver);
 //Connects backend to mongodb atlas 
 
 const transc = {
@@ -40,7 +38,7 @@ const transc = {
 };
 const User = new mongoose.model('caption', transc)
 const configuration = new Configuration({
-  apiKey: "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",
+  apiKey: naidu,
 });
 //Creates openai configuration
 
@@ -48,16 +46,18 @@ const configuration = new Configuration({
 
 
 var tt={};
-var audtitle= "audio4";
+
 const openai = new OpenAIApi(configuration);
 
 
 
-app.post("/",async (req,res)=>{
+app.post("/",async ( req,res)=>{
     
-    const inputData = req.body.inputName;
+    const inputData = req.body.name;
     const out_put =await runEmbed(inputData);
     res.send(out_put.text);
+    
+    
 
 })
 
@@ -70,58 +70,71 @@ app.post("/",async (req,res)=>{
 
 
 
-
 async function transcribe() {
-    
-    const resp = await openai.createTranscription(
-        fs.createReadStream(audtitle+".mp3"), // audio input file
-        "whisper-1");
-    
-    
-    tt=resp.data;
-   
-    
-    
-    const newData= new User({
-        title:audtitle,
-        text:tt.text
+
+    const directory = fs.opendirSync(__dirname+"/audio")
+    let file
+    while ((file = directory.readSync()) !== null) {
+        var audtitle= file.name;
+        const resp = await openai.createTranscription(
+            fs.createReadStream("audio/"+audtitle), // audio input file
+            "whisper-1");
         
-    });
+        
+        tt=resp.data;
+       
+        
+        
+        const newData= new User({
+            title:audtitle,
+            text:tt.text
+            
+        });
+        console.log(tt);
+    
+        
+        User.findOne({title:audtitle}).then(found=>{
+            if (found) {
+               
+                fs.appendFile('data.txt',found.text,(err)=>{
+                    if(err){
+                        throw err;
+                    }
+                    else{
+                        console.log('File is created successfully.');
+                    }
+                } )
+    
+            }
+            else {
+                newData.save();
+                
+                fs.appendFile('data.txt',newData.text,(err)=>{
+                    if(err){
+                        throw err;
+                    }
+                    else{
+                        console.log('File is created successfully.');
+                    }
+                } )
+            }
+        })
+  
+
+    }
+    console.log("transcribtion done")
+
+    directory.closeSync()
 
     
-    User.findOne({title:audtitle}).then(found=>{
-        if (found) {
-            console.log("done");
-            fs.writeFile('data.txt',found.text,(err)=>{
-                if(err){
-                    throw err;
-                }
-                else{
-                    console.log('File is created successfully.');
-                }
-            } )
-
-        }
-        else {
-            newData.save();
-            console.log("added");
-            fs.writeFile('data.txt',found.text,(err)=>{
-                if(err){
-                    throw err;
-                }
-                else{
-                    console.log('File is created successfully.');
-                }
-            } )
-        }
-    })
+    
 }
 // Transcribes audio4.mp3 file into text and saves it to mongodb and to data.txt.
-transcribe();
+
 
  const runEmbed =async (ques)=>{
     const model= new OpenAI({
-        openAIApiKey:"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",
+        openAIApiKey:naidu,
     });
     //Creates an OpenAI model
     
@@ -131,10 +144,11 @@ transcribe();
     //Splits the data.txt text to smaller chunks.
     const doc = await textSplit.createDocuments([data_text]);
 
-
+    
     id=[];
     docData=[];
     docMeta=[]
+    
     
     for(let i=0;i<doc.length;i++){
         let idno="doc"+(i+1).toString();
@@ -142,13 +156,15 @@ transcribe();
         docData.push(doc[i].pageContent);
         docMeta.push(doc[i].metadata);
         
+
     }
+    
     const vectorStore = await Chroma.fromDocuments(
         doc,
-        new OpenAIEmbeddings({openAIApiKey:"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"}),
+        new OpenAIEmbeddings({openAIApiKey:naidu}),
         { collectionName: "transcribe" }
     );//Creates Vector store from Chroma 
-
+    
     const chain = ConversationalRetrievalQAChain.fromLLM(
         model,
         vectorStore.asRetriever()
@@ -156,6 +172,7 @@ transcribe();
       //Uses Vector Store to create a chain using LLM which is used to Retrieve similar documents
 
     const question = ques;
+   
     
     
     
@@ -171,7 +188,6 @@ transcribe();
 
     
     
-
     
     return  res;
    
@@ -181,8 +197,6 @@ transcribe();
 
 
 
-const port =3000;
-const outrrr="start on   "+port
-app.listen(port, function () {
-    console.log(outrrr);
+app.listen(5000,()=>{
+    console.log('Server running');
 })
