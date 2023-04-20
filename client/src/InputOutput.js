@@ -15,7 +15,7 @@ function InputOutput() {
     event.preventDefault();
     console.log(inputData)
 
-    try{const response = await axios.post('http://localhost:5000',{name:inputData});
+    try{const response = await axios.post('https://langai.onrender.com',{name:inputData});
     console.log(response)
     setOutputData(response.data);
   
