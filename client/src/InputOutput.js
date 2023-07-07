@@ -5,19 +5,29 @@ import axios from "axios";
 
 function InputOutput() {
   const [inputData, setInputData] = useState('');
-  const [outputData, setOutputData] = useState('');
+  const [inputTitle,setInputTitle]=useState('');
+  
 
   const handleInputChange = (event) => {
     setInputData(event.target.value);
+  };
+  const handleTitleChange = (event) => {
+    setInputTitle(event.target.value);
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     console.log(inputData)
 
-    try{const response = await axios.post('https://langai.onrender.com',{name:inputData});
+    
+    try{const response = await axios.post('http://localhost:5000',{name:inputData,audtitle:inputTitle});
     console.log(response)
-    setOutputData(response.data);
+    // setOutputData(response.data);
+    if (response.status === 200) {
+      window.location.href = '/ask';
+    } else {
+      console.log('Request failed with status:', response.status);
+    }
   
   }catch(e){
       console.log(e);
@@ -32,18 +42,26 @@ function InputOutput() {
     <div className="container">
       <h1>LANGAI</h1>
       <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="input" className="label">Input:</label>
-          <input type="text" id="input" value={inputData} onChange={handleInputChange} className="input" />
-        </div>
-        <button type="submit" className="button">Submit</button>
+      <div>
+        
+        <label>Title:</label>
+        <input
+          type="text"
+          value={inputTitle}
+          onChange={handleTitleChange} className='inut'
+        />
+        <label>Youtubelink:</label>
+        <input
+          type="text"
+          value={inputData}
+          onChange={handleInputChange} className='inut'
+        />
+      </div>
+      
+      <button type="submit">Submit</button>
+      
       </form>
-      {outputData && (
-        <div className="output">
-          <h2 className="output-heading">Output:</h2>
-          <p className="output-text">{outputData}</p>
-        </div>
-      )}
+      
     </div>
   )
 }
