@@ -20,7 +20,7 @@ function InputOutput() {
     console.log(inputData)
 
     
-    try{const response = await axios.post('http://localhost:5000',{name:inputData,audtitle:inputTitle});
+    try{const response = await axios.post('https://langai.onrender.com',{name:inputData,audtitle:inputTitle});
     console.log(response)
     // setOutputData(response.data);
     if (response.status === 200) {
@@ -42,26 +42,26 @@ function InputOutput() {
     <div className="container">
       <h1>LANGAI</h1>
       <form onSubmit={handleSubmit}>
-      <div>
-        
-        <label>Title:</label>
-        <input
-          type="text"
-          value={inputTitle}
-          onChange={handleTitleChange} className='inut'
-        />
-        <label>Youtubelink:</label>
-        <input
-          type="text"
-          value={inputData}
-          onChange={handleInputChange} className='inut'
-        />
-      </div>
-      
-      <button type="submit">Submit</button>
-      
+        <div className="form-group">
+          <label htmlFor="title">Title:</label>
+          <input
+            type="text"
+            id="title"
+            value={inputTitle}
+            onChange={handleTitleChange}
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="youtube-link">YouTube Link:</label>
+          <input
+            type="text"
+            id="youtube-link"
+            value={inputData}
+            onChange={handleInputChange}
+          />
+        </div>
+        <button type="submit">Submit</button>
       </form>
-      
     </div>
   )
 }
